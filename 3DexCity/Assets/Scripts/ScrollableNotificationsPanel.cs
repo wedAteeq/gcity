@@ -46,7 +46,7 @@ public class ScrollableNotificationsPanel : MonoBehaviour
             float width = containerRectTransform.rect.width / columnCount;
             float ratio = width / rowRectTransform.rect.width;
 
-            float height = rowRectTransform.rect.height * ratio * 2;
+            float height = rowRectTransform.rect.height * ratio ;
 
             int rowCount = itemCount / columnCount;
 
@@ -96,7 +96,7 @@ public class ScrollableNotificationsPanel : MonoBehaviour
                 textMessage.name = "Message" + i;
                 if (i < itemCount)
                 {
-                    textMessage.text = useraccountinfo.GetSFSObject(i).GetUtfString("name") + " requests to visit you?";
+                    textMessage.text = useraccountinfo.GetSFSObject(i).GetUtfString("name") + " requested to friend you?";
                     Debug.Log(useraccountinfo.GetSFSObject(i).GetUtfString("name"));
                 }
                 Button AccButton, RejButton;

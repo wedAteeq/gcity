@@ -12,7 +12,7 @@ public class MenueCode : MonoBehaviour {
 	public Transform memberView;
 	public Transform LogoutMember;
 	public Transform LogoutAdmin;
-	public Transform notifications;
+	public Transform notifications, AdminNotifications;
 	public Transform addAdmin;
 	public Transform membershipRe;
 	public Transform ReserveAuction;
@@ -35,22 +35,24 @@ public class MenueCode : MonoBehaviour {
     public Transform viewFriendList;
     public Transform manageAdminAccount;
     public Transform Ncontent;
-    public Transform Fcontent;
-	public Transform tour;
+    public Transform Fcontent, Acontent;
+	public Transform tour,thanks;
 	public Text userName;
 	public Text FirstName;
-	public Text LastName;
+	public Text LastName, textMsg;
 	public Text Email;
 	public Text password1;
 	public Text password2;
 	public Text bio;
-	public Transform DeleteOtherMember;
+    public Text Msg;
+
+    public Transform DeleteOtherMember;
     public Animator GirlAvatar;
 
     public InputField UserName;
     public InputField Password;
 
-    public InputField AdminUserName;
+    public InputField AdminUserName, user,email,subject,msg;
     public InputField AdminPassword;
     public InputField AdminConPassword;
     public InputField AdminEmail;
@@ -232,7 +234,11 @@ public class MenueCode : MonoBehaviour {
 			ContactUs.gameObject.SetActive (clicked);
 			HomePage.gameObject.SetActive (true);
 		}
-	}//end
+        email.text = "";
+        subject.text = "";
+        msg.text = "";
+        textMsg.text = "";
+    }//end
 
 
 
@@ -341,31 +347,37 @@ public class MenueCode : MonoBehaviour {
 
 
     public void notification3(bool clicked)//from Admin view to notification form
-	{ 
-		if (clicked == true) {
-			notifications.gameObject.SetActive (clicked);
-			ContactUs.gameObject.SetActive (false);
-			addAdmin.gameObject.SetActive (false);
-			AddContent.gameObject.SetActive (false);
-			CreateAccount.gameObject.SetActive (false);
-			DeleteAccount.gameObject.SetActive (false);
-			ForgetPassword.gameObject.SetActive (false);
-			viewAccount.gameObject.SetActive (false);
-			membershipRe.gameObject.SetActive (false);
-			ReserveAuction.gameObject.SetActive (false);
-			WelcomPage.gameObject.SetActive (false);
-			ManegeAccount.gameObject.SetActive (false);
-			ManageAdminAccount.gameObject.SetActive (false);
-			ManegeMemberAccount.gameObject.SetActive (false);
-		}
-		else {
-			notifications.gameObject.SetActive (clicked);
-			ContactUs.gameObject.SetActive (true);
-		}
-		}//end
-	
+    {
+        if (clicked == true)
+        {
+            //notifications.gameObject.SetActive (clicked);
+            ContactUs.gameObject.SetActive(false);
+            addAdmin.gameObject.SetActive(false);
+            //AddContent.gameObject.SetActive (false);
+            memberView.gameObject.SetActive(false);
+            Account1.gameObject.SetActive(false);
+            AdminView.gameObject.SetActive(false);
+            Account2.gameObject.SetActive(false);
+            CreateAccount.gameObject.SetActive(false);
+            DeleteAccount.gameObject.SetActive(false);
+            ForgetPassword.gameObject.SetActive(false);
+            viewAccount.gameObject.SetActive(false);
+            membershipRe.gameObject.SetActive(false);
+            ReserveAuction.gameObject.SetActive(false);
+            WelcomPage.gameObject.SetActive(false);
+            ManegeAccount.gameObject.SetActive(false);
+            ManageAdminAccount.gameObject.SetActive(false);
+            ManegeMemberAccount.gameObject.SetActive(false);
+        }
+        else
+        {
+            //notifications.gameObject.SetActive (clicked);
+            ContactUs.gameObject.SetActive(true);
+        }
+    }//end
 
-	public void addAdmin1(bool clicked)//from Admin view to add admin form
+
+    public void addAdmin1(bool clicked)//from Admin view to add admin form
 	{ 
 		if (clicked == true) {
 			addAdmin.gameObject.SetActive (clicked);
@@ -507,6 +519,8 @@ public class MenueCode : MonoBehaviour {
 			viewAccount.gameObject.SetActive (clicked);
 			AdminView.gameObject.SetActive (true);
 		}
+        Msg.text = "";
+        user.text = "";
 	}//end
 
 
@@ -532,9 +546,9 @@ public class MenueCode : MonoBehaviour {
 			ConfirmDeleteAdmin.gameObject.SetActive(false);
 			ConfirmDeleteMember.gameObject.SetActive(false);
 			tour.gameObject.SetActive(false);
+            thanks.gameObject.SetActive(false);
 
-
-		}
+        }
 
 	}
 
@@ -665,24 +679,28 @@ public class MenueCode : MonoBehaviour {
 
     public void backToaccount2(bool clicked)//from Admin view to add admin form
     {
-		if (clicked == true) {
+        if (clicked == true)
+        {
 
+            if (Acontent != null)
+                foreach (Transform child in Acontent.transform)
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
 
+            Account2.gameObject.SetActive(true);
+            manageAdminAccount.gameObject.SetActive(false);
+            AdminNotifications.gameObject.SetActive(false);
+            MemberAccountInfo.gameObject.SetActive(false);
+            LogoutAdmin.gameObject.SetActive(false);
+            addAdmin.gameObject.SetActive(false);
+            viewAccount.gameObject.SetActive(false);
+            DeleteAccount.gameObject.SetActive(false);
+            DeleteOtherMember.gameObject.SetActive(false);
+            ConfirmDeleteAdmin.gameObject.SetActive(false);
 
-			Account2.gameObject.SetActive (true);
-			manageAdminAccount.gameObject.SetActive (false);
-			notifications.gameObject.SetActive (false);
-			MemberAccountInfo.gameObject.SetActive (false);
-			LogoutAdmin.gameObject.SetActive (false);
-			addAdmin.gameObject.SetActive (false);
-			viewAccount.gameObject.SetActive (false);
-			DeleteAccount.gameObject.SetActive (false);
-			DeleteOtherMember.gameObject.SetActive (false);
-			ConfirmDeleteAdmin.gameObject.SetActive (false);
-
-		}
-
-    }//end
+        }
+    }
     public void addcont(bool clicked)
 	{ 
 		if (clicked == true) {

@@ -23,17 +23,17 @@ public class ViewMemberAccount : MonoBehaviour
     //----------------------------------------------------------
     public InputField UserName;
     public Text TextMessage;
-    public Transform  AdminView;
-    public Transform viewPage;
+    public Transform AdminView;
+    public Transform viewPage, view, Delete;
 
     public Text View_username;
     public Text Email;
     public Text FirstName;
     public Text LastName;
-    public Text Biography;
-    public Text ActivateRoom;
+    public Text accountType, act_code, active;
+    public Text ActivateRoom, Biography;
     public Text Avatar;
- 
+
 
     private int viewStatus = 0;
     private int deleteStatus = 0;
@@ -66,13 +66,17 @@ public class ViewMemberAccount : MonoBehaviour
     {
         username = UserName.text;
         TextMessage.text = "";
-        View_username.text = "UserName";
-        Email.text = "Email";
-        FirstName.text = "First Name";
-        LastName.text = "Last Name";
-        Biography.text = "Biography\n";
-        ActivateRoom.text = "Has Room";
-        Avatar.text = "Gender type";
+        View_username.text = "UserName:\n";
+        Email.text = "Email:\n";
+        FirstName.text = "First Name:\n";
+        LastName.text = "Last Name:\n";
+        Biography.text = "Biography:\n";
+        ActivateRoom.text = "Has Room:\n";
+        Avatar.text = "Avatar Gender:\n";
+        accountType.text = "Account Type:\n";
+        act_code.text = "Activation Code:\n";
+        active.text = "Activate Account:\n";
+
         int AdminIndex = username.IndexOf("n");
         string admin = username.Substring(0, AdminIndex + 1);
         if (!admin.Equals("Admin"))
@@ -103,7 +107,8 @@ public class ViewMemberAccount : MonoBehaviour
             sfs.Connect(ServerIP, ServerPort);
         }
         else
-            EditorUtility.DisplayDialog("Waring Message", "         Sorry, You can not view any admin account only members", "ok");
+            TextMessage.text = "Sorry, You can not view any admin account only members";
+
 
     }//end
 
@@ -122,8 +127,7 @@ public class ViewMemberAccount : MonoBehaviour
             // Remove SFS2X listeners and re-enable interface
             reset();
 
-            // Show error message
-            TextMessage.text = "Connection Failed!";
+
         }
     }
 
@@ -175,34 +179,47 @@ public class ViewMemberAccount : MonoBehaviour
             viewStatus = 0;
             ISFSArray useraccountinfo = objIn.GetSFSArray("account");
             if (useraccountinfo.Size() == 0)
-                EditorUtility.DisplayDialog("Warning Message", "               The username is not true", "ok");
+                // EditorUtility.DisplayDialog("Warning Message", "               The username is not true", "ok");
+                TextMessage.text = "Invalid username";
             else
             {
                 viewPage.gameObject.SetActive(true);
-                View_username.text = View_username.text+": "+ useraccountinfo.GetSFSObject(0).GetUtfString("username");
-                Debug.Log(View_username.text);
-                
-                Email.text = Email.text +": "+useraccountinfo.GetSFSObject(0).GetUtfString("email");
-                FirstName.text = FirstName.text+": "+ useraccountinfo.GetSFSObject(0).GetUtfString("firstName");
-                if (useraccountinfo.GetSFSObject(0).GetUtfString("biography") == null)
-                    Biography.text = Biography.text+": null";
-                else
-                    Biography.text = Biography.text + ": "+useraccountinfo.GetSFSObject(0).GetUtfString("biography");
+                view.gameObject.SetActive(false);
 
-                LastName.text = LastName.text+": " + useraccountinfo.GetSFSObject(0).GetUtfString("lastName");
+
+
+                View_username.text = View_username.text + useraccountinfo.GetSFSObject(0).GetUtfString("username");
+
+                Email.text = Email.text + useraccountinfo.GetSFSObject(0).GetUtfString("email");
+                FirstName.text = FirstName.text + useraccountinfo.GetSFSObject(0).GetUtfString("firstName");
+
+                if (useraccountinfo.GetSFSObject(0).GetUtfString("biography") == null)
+                    Biography.text = Biography.text + " null";
+                else
+                    Biography.text = Biography.text + useraccountinfo.GetSFSObject(0).GetUtfString("biography");
+
+                LastName.text = LastName.text + useraccountinfo.GetSFSObject(0).GetUtfString("lastName");
 
 
                 if (useraccountinfo.GetSFSObject(0).GetUtfString("hasRoom").Equals("Y"))
-                    ActivateRoom.text = ActivateRoom.text+ ": Yes";
+                    ActivateRoom.text = ActivateRoom.text + " Yes";
                 else
-                    ActivateRoom.text = ActivateRoom.text + ": No";
+                    ActivateRoom.text = ActivateRoom.text + " No";
 
 
 
                 if (useraccountinfo.GetSFSObject(0).GetUtfString("avatar").Equals("F"))
-                    Avatar.text = Avatar.text + ": Female";
+                    Avatar.text = Avatar.text + " Female";
                 else
-                    Avatar.text = Avatar.text + ": Male";
+                    Avatar.text = Avatar.text + " Male";
+
+                accountType.text = accountType.text + useraccountinfo.GetSFSObject(0).GetUtfString("accountType");
+                act_code.text = act_code.text + useraccountinfo.GetSFSObject(0).GetUtfString("act_code");
+
+                if (useraccountinfo.GetSFSObject(0).GetUtfString("active").Equals("Y"))
+                    active.text = active.text + " Yes";
+                else
+                    active.text = active.text + " No";
 
             }
         }//view account
@@ -214,9 +231,11 @@ public class ViewMemberAccount : MonoBehaviour
             if (result == "Successful")
             {
                 Debug.Log("Successful");
-               // EditorUtility.DisplayDialog("Waring Message", "         The account deleted successfully: " + username, "ok");
+                EditorUtility.DisplayDialog("Waring Message", "         The account has been deleted successfully: " + username, "ok");
                 AdminView.gameObject.SetActive(true);
                 viewPage.gameObject.SetActive(false);
+                Delete.gameObject.SetActive(false);
+
             }
             else
             {

@@ -47,7 +47,7 @@ public class ScrollableFriendsPanel : MonoBehaviour
             //calculate the width and height of each child item.
             float width = containerRectTransform.rect.width / columnCount;
             float ratio = width / rowRectTransform.rect.width;
-            float height = rowRectTransform.rect.height * ratio * 2;
+            float height = rowRectTransform.rect.height * ratio ;
             int rowCount = itemCount / columnCount;
 
             if (itemCount % rowCount > 0)
@@ -86,13 +86,13 @@ public class ScrollableFriendsPanel : MonoBehaviour
                 Text textMessage;
 
                 if (i == 0)
-                    Message = GameObject.Find("Message");
+                    Message = GameObject.Find("message");
                 else
-                    Message = GameObject.Find("Message" + (i - 1));
+                    Message = GameObject.Find("message" + (i - 1));
 
 
                 textMessage = Message.GetComponent<Text>();
-                textMessage.name = "Message" + i;
+                textMessage.name = "message" + i;
                 if (i < itemCount)
                 {
                     textMessage.text = Friends.GetSFSObject(i).GetUtfString("name") + " is my friend";
@@ -112,9 +112,9 @@ public class ScrollableFriendsPanel : MonoBehaviour
                     newItem.SetActive(false);
             }
 
-            GameObject MSG = GameObject.Find("Message" + (i - 1));
+            GameObject MSG = GameObject.Find("message" + (i - 1));
             Text textMSG = MSG.GetComponent<Text>();
-            textMSG.name = "Message";
+            textMSG.name = "message";
 
             GameObject DeleteBut = GameObject.Find("Delete " + (i - 1));
             Button DButton = DeleteBut.GetComponent<Button>();
