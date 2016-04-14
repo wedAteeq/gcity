@@ -6,7 +6,7 @@ public struct Transverser
 {
     public static ISFSArray userinfo;
     public static string RoomID;
-    public static string MyRoomID;
+    public static string MyRoomID="1";
     public static ISFSArray Friends;
     public static GameObject itemPrefab1;
     public static GameObject itemPrefab1Parent;

@@ -4,6 +4,7 @@ using System.Collections;
 using Sfs2X;
 using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
+using UnityEngine.UI;
 
 
 
@@ -23,8 +24,14 @@ public class Room : MonoBehaviour
     private SmartFox sfs;
     private string userName, accountType;
     private int RoomId;
-    string RoomName;
-    string RoomIDInTheCity;
+    string RoomName; //the name of the room 
+    string RoomIDInTheCity; //the ID of the room
+    string name; // i need this in arrange 
+    Collider FramePicforArrange; //referrnse to frame of picture
+    Material temp; //i need this in arrange to swap between texture
+    public Text test;
+    string checkedMessage; //i need it for displaying message when the avatar in the room
+
 
     void Start()
     {
@@ -32,7 +39,8 @@ public class Room : MonoBehaviour
         add.SetActive(false);
         delete.SetActive(false);
         arrange.SetActive(false);
-
+        name = null;
+        checkedMessage ="no";
     }
 
 
@@ -60,28 +68,49 @@ public class Room : MonoBehaviour
 
         {
 
-            FramePic = other; //assign the touced object to FramePic
+            if (name == null)
+            {
+                FramePic = other; //assign the touced object to FramePic
+                name = other.gameObject.name;
+            }
+
+            else
+            {
+                FramePicforArrange = other;
+                name = null;
+            } 
+
 
         }
 
         if (other.gameObject.CompareTag("ActiveGround"))
         {
-            //RoomName=other.gameObject.name;
-            //int index= RoomName.IndexOf("#");
-            //RoomIDInTheCity = RoomName.Substring(index);
-            // if (RoomIDInTheCity == Transverser.MyRoomID)
-            //{
+            
+             if (RoomIDInTheCity == Transverser.MyRoomID) //if the room is his room show this the buttons
+            {
             add.SetActive(true);
             delete.SetActive(true);
             arrange.SetActive(true);
-
-            //}
+             
+                if (checkedMessage == "no")
+                {
+                    if (EditorUtility.DisplayDialog("Instructions", "If you want to take advantage of the characteristics of your room (add, delete, arrange) Please clung to the fram that you want to make changes to it", "OK", "don't show this again"))
+                        checkedMessage = "no";
+                    else
+                    {
+                        checkedMessage = "yes";
+                    }
+                }
+            }
         }
 
 
         if (other.gameObject.CompareTag("DisactiveGround"))
         {
-
+            RoomName=other.gameObject.name; //to tack the name of object
+            int index= RoomName.IndexOf("#"); //to know the postion of the room  
+            RoomIDInTheCity = RoomName.Substring(index+1); //to know the id 
+            test.text = RoomIDInTheCity;
             add.SetActive(false);
             delete.SetActive(false);
             arrange.SetActive(false);
@@ -107,6 +136,9 @@ public class Room : MonoBehaviour
 
         }
 
+        name = null;
+        FramePic = null;
+
     }
 
 
@@ -114,12 +146,17 @@ public class Room : MonoBehaviour
 
     {
 
+        
+            if (EditorUtility.DisplayDialog("Warning Message", "Are you sure you want to delete this content?", "OK", "Cancel"))
+            {
 
-        if (EditorUtility.DisplayDialog("Warning Message", "Are you sure you want to delete this content?", "OK", "Cancel"))
-        {
             FramePic.GetComponent<Renderer>().material.mainTexture = null; //delete the texture 
             FramePic.GetComponent<Renderer>().material = Clear; //assign this standerd matrial 
+            
         }
+
+        name = null;
+        FramePic = null;
 
 
     }
@@ -132,14 +169,21 @@ public class Room : MonoBehaviour
         if (EditorUtility.DisplayDialog("Warning Message", "Are you sure you want to rearrange this fram?", "OK", "Cancel"))
         {
 
-
-            FramePic.transform.parent = anim.transform; //make the frame child of the avatar 
-            FramePic.transform.position = anim.transform.forward + anim.transform.up + anim.transform.up + anim.transform.position; //to make the object in frount of the avatar
-            //FramePic.transform.rotation = new Quaternion (0f,180f,0f,0f);
+            EditorUtility.DisplayDialog("Warning Message", "please select the second fram that you want to replace with", "OK");
+           // FramePic.transform.parent = anim.transform; //make the frame child of the avatar 
+            //FramePic.transform.position = anim.transform.forward + anim.transform.up + anim.transform.up + anim.transform.position; //to make the object in frount of the avatar
+            //FramePic.transform.rotation = new Quaternion (0f,180f,0f,0f); 
 
 
         }
-        EditorUtility.DisplayDialog("Warning Message", "Please press Z if you find the appropriate postion for this frame ", "OK");
+
+        else
+        {
+            name = null;
+            FramePic = null;
+            //EditorUtility.DisplayDialog("Warning Message", "Please press Z if you find the appropriate postion for this frame ", "OK");
+        }
+
     }
 
 
@@ -150,8 +194,17 @@ public class Room : MonoBehaviour
             sfs.ProcessEvents();
 
         //I will use when the user carry the frame
-        if (Input.GetKey(KeyCode.Z))
-            FramePic.transform.parent = null;
+        //if (Input.GetKey(KeyCode.Z))
+           // FramePic.transform.parent = null;
+           if (name != null)
+
+           {
+            temp.SetTexture("",FramePic.GetComponent<Renderer>().material.mainTexture) ;
+            FramePic.GetComponent<Renderer>().material.SetTexture("", FramePicforArrange.GetComponent<Renderer>().material.mainTexture);
+            FramePicforArrange.GetComponent<Renderer>().material.SetTexture("", temp.mainTexture);
+            name = null;
+           }
+
     }
 
 
