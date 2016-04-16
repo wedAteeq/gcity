@@ -67,6 +67,7 @@ public class MenueCode : MonoBehaviour {
     public InputField MemberFirstName;
     public InputField MemberLastName;
     public InputField MemberBiography;
+	public Transform aboutUs;
 
     //public GameObject remy;
 
@@ -88,6 +89,8 @@ public class MenueCode : MonoBehaviour {
         UserName.text = "";
         Password.text = "";
     }//end
+
+
 
 	public void memberInfo(bool clicked)
 	{ 
@@ -222,6 +225,14 @@ public class MenueCode : MonoBehaviour {
         MemberLastName.text = "";
     }//end
 
+	public void aboutus1(bool clicked)////from home page to contact us form
+	{ 
+		if (clicked == true) {
+			aboutUs.gameObject.SetActive (clicked);
+			HomePage.gameObject.SetActive (false);
+
+		} 
+	}
 
 	public void ContactUs1(bool clicked)////from home page to contact us form
 	{ 
@@ -547,6 +558,7 @@ public class MenueCode : MonoBehaviour {
 			ConfirmDeleteMember.gameObject.SetActive(false);
 			tour.gameObject.SetActive(false);
             thanks.gameObject.SetActive(false);
+			aboutUs.gameObject.SetActive(false);
 
         }
 
