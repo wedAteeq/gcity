@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using Sfs2X;
-using Sfs2X.Util;
 using Sfs2X.Core;
 using Sfs2X.Requests;
-using System;
 using Sfs2X.Entities.Data;
+using UnityEngine.UI;
+using Sfs2X.Util;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 using UnityEditor;
 
 public class manageMemberAccount : MonoBehaviour
@@ -14,16 +15,9 @@ public class manageMemberAccount : MonoBehaviour
     //----------------------------------------------------------
     // Private properties (Connection part)
     //----------------------------------------------------------
-    private string ServerIP = "127.0.0.1";// Default host
-    private int defaultTcpPort = 9933;// Default TCP port
-    private int defaultWsPort = 8888;			// Default WebSocket port
-    private string ZoneName = "3DexCityZone";
-    private int ServerPort = 0;
-
-    private SmartFox sfs;
+  
     private string username;
-
-    //----------------------------------------------------------
+     //----------------------------------------------------------
     // UI elements
     //----------------------------------------------------------
     public InputField UserName;
@@ -46,9 +40,7 @@ public class manageMemberAccount : MonoBehaviour
     public Animator GirlAvatar;
     public int RoomsNum;
 
-    private int viewStatus = 0;
-    private int deleteStatus = 0;
-    private int updateStatus = 0;
+
     private int CreateRoom = 0;
     private int DeleteRoom = 0;
     private int Room_ID = 1;
@@ -60,6 +52,19 @@ public class manageMemberAccount : MonoBehaviour
     //----------------------------------------------------------
 
     // Use this for initialization
+    private static manageMemberAccount instance;
+    public static manageMemberAccount Instance
+    {
+        get
+        {
+            return instance;
+        }
+    }
+    void Awake()
+    {
+        instance = this;
+    }
+
     void Start()
     {
         TextMessage.text = "";
@@ -67,75 +72,21 @@ public class manageMemberAccount : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
-    {
-        // As Unity is not thread safe, we process the queued up callbacks on every frame
-        if (sfs != null)
-            sfs.ProcessEvents();
-    }
+
 
     //----------------------------------------------------------
     // Public interface methods for UI
     //----------------------------------------------------------
 
     public void OnViewMyAccountButtonclicked()
-    {
-        username = UserName.text;
-        Debug.Log("view account");
-        viewPage.gameObject.SetActive(true);
-        viewStatus = 1;
-        TextMessage.text = "";
-#if UNITY_WEBGL
-            {
-             sfs = new SmartFox(UseWebSocket.WS);
-             ServerPort = defaultWsPort;
-            }
-#else
-        {
-            sfs = new SmartFox();
-            ServerPort = defaultTcpPort;
-        }
-#endif
-
-        sfs.ThreadSafeMode = true;
-        sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-        sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
-        sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
-        sfs.Connect(ServerIP, ServerPort);
-
-    }//end
-
-    private void OnConnection(BaseEvent evt)
-    {
-        if ((bool)evt.Params["success"])
-        {
-            // Login
-            Debug.Log("Successfully Connected!");
-
-            sfs.Send(new LoginRequest("", "", ZoneName));
-        }
-        else
-        {
-            Debug.Log("Connection Failed!");
-            // Remove SFS2X listeners and re-enable interface
-            reset();
-
-            // Show error message
-            TextMessage.text = "Connection Failed!";
-        }
-    }
-
-    private void OnLogin(BaseEvent evt)
-    {
-        Debug.Log("Logged In: " + evt.Params["user"]);
-
+    {   //on button view my account clicked by a member
+        //it will request the account info from the server
+        username = UserName.text;//variable to store username of the member
+        viewPage.gameObject.SetActive(true);//to acctivate view account form
+        TextMessage.text = "";//displayed error message
         ISFSObject objOut = new SFSObject();
         objOut.PutUtfString("username", username);
-        sfs.Send(new ExtensionRequest("ViewAccount", objOut));
-
+        NetworkManager.Instance.GetAccountInfo(objOut);
     }
 
     private void enableInterface(bool enable)
@@ -144,239 +95,160 @@ public class manageMemberAccount : MonoBehaviour
 
     }
 
-    private void OnConnectionLost(BaseEvent evt)
-    {
-        // Remove SFS2X listeners and re-enable interface
-        reset();
+	public void ViewMemberAccount(ISFSObject objIn)
+	{   //method to display user account info after it retrieve the info from server
+		ISFSArray useraccountinfo = objIn.GetSFSArray("account");//object that contains all info
+		View_username.text = useraccountinfo.GetSFSObject(0).GetUtfString("username");//display username
+ 		pass = useraccountinfo.GetSFSObject(0).GetUtfString("password");
+		View_Password.text = pass;//display password as **** and encrypted
+		ConPassword.text = pass;//display confirm password as **** and encrypted
+		Email.text = useraccountinfo.GetSFSObject(0).GetUtfString("email");//display email
+		FirstName.text = useraccountinfo.GetSFSObject(0).GetUtfString("firstName");//display frstname
+		if (useraccountinfo.GetSFSObject(0).GetUtfString("biography") == null)//display bio
+			Biography.text = "";
+		else
+			Biography.text = useraccountinfo.GetSFSObject(0).GetUtfString("biography");
 
-        string reason = (string)evt.Params["reason"];
-
-        if (reason != ClientDisconnectionReason.MANUAL)
-        {
-            // Show error message
-            TextMessage.text = "Connection was lost; reason is: " + reason;
-        }
-    }//end
-
-    private void OnLoginError(BaseEvent evt)
-    {    // Show error message
-        string message = (string)evt.Params["errorMessage"];
-        // TextMessage.text = "Login failed: " + message;
-        Debug.Log("Login failed: " + message);
-
-        // Disconnect
-        sfs.Disconnect();
-
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-    }
-
-    private void OnExtensionResponse(BaseEvent evt)
-    {
-        Debug.Log("2: ");
-
-        ISFSObject objIn = (SFSObject)evt.Params["params"];
-        if (viewStatus == 1)
-        {
-            ISFSArray useraccountinfo = objIn.GetSFSArray("account");
-            View_username.text = useraccountinfo.GetSFSObject(0).GetUtfString("username");
-            Debug.Log(View_username.text);
-            pass = useraccountinfo.GetSFSObject(0).GetUtfString("password");
-            View_Password.text = pass;
-            ConPassword.text = pass;
-            Email.text = useraccountinfo.GetSFSObject(0).GetUtfString("email");
-            FirstName.text = useraccountinfo.GetSFSObject(0).GetUtfString("firstName");
-            if (useraccountinfo.GetSFSObject(0).GetUtfString("biography") == null)
-                Biography.text = "";
-            else
-                Biography.text = useraccountinfo.GetSFSObject(0).GetUtfString("biography");
-
-            LastName.text = useraccountinfo.GetSFSObject(0).GetUtfString("lastName");
+		LastName.text = useraccountinfo.GetSFSObject(0).GetUtfString("lastName");//display lastname
 
 
-            if (useraccountinfo.GetSFSObject(0).GetUtfString("hasRoom").Equals("Y"))
-            {
-                ActivateRoom.isOn = true;
-                // ActivateRoom.enabled = false;
-            }
-            else
-                ActivateRoom.isOn = false;
+		if (useraccountinfo.GetSFSObject(0).GetUtfString("hasRoom").Equals("Y"))
+			ActivateRoom.isOn = true;//turn on room radio button
+		else
+			ActivateRoom.isOn = false;//turn off room radio button
 
-            previousHasRoom = useraccountinfo.GetSFSObject(0).GetUtfString("hasRoom");
+		previousHasRoom = useraccountinfo.GetSFSObject(0).GetUtfString("hasRoom");//to store value
 
-            if (useraccountinfo.GetSFSObject(0).GetUtfString("accountType").Equals("private"))
-                AccountType.isOn = true;
-            else
-                AccountType.isOn = false;
+		if (useraccountinfo.GetSFSObject(0).GetUtfString("accountType").Equals("private"))
+			AccountType.isOn = true;//turn on account type radio button
+		else
+			AccountType.isOn = false;//turn off account type radio button
 
-            if (useraccountinfo.GetSFSObject(0).GetUtfString("avatar").Equals("F"))
-            {
-                FAvatar.isOn = true;
-                MAvatar.isOn = false;
-            }
+		if (useraccountinfo.GetSFSObject(0).GetUtfString("avatar").Equals("F"))
+		{
+			FAvatar.isOn = true;//turn on female avatar radio button
+			MAvatar.isOn = false;//turn off male avatar radio button
+		}
 
-            else
-            {
-                MAvatar.isOn = true;
-                FAvatar.isOn = false;
-            }
+		else
+		{
+			MAvatar.isOn = true;//turn on male avatar radio button
+			FAvatar.isOn = false;//turn off female avatar radio button
+		}
 
-            Email.interactable = false;
-            View_username.interactable = false;
-            viewStatus = 0;
-        }//view account
-        else
-             if (deleteStatus == 1)
-        {
-            string result = objIn.GetUtfString("DeleteResult");
+		Email.interactable = false;//disable changing email
+		View_username.interactable = false;//disable changing username
+	}
 
-            if (result == "Successful")
-            {
-                Debug.Log("Successful");
-                //TextMessage.text = "Your account deleted successfully";
-                EditorUtility.DisplayDialog("Waring Message", "         Your account deleted successfully", "ok");
-                Home.gameObject.SetActive(true);
-                Delete.gameObject.SetActive(false);
-            }
-            else
-            {
-                Debug.Log("error");
-                //TextMessage.text = "Your account has not been deleted";
-                EditorUtility.DisplayDialog("Waring Message", "         Your account has not been deleted", "ok");
+	public void OnDeleteButtonClocked()
+	{//start
+		//on delete button clicked, the request
+		//to delete the account send to the server
+		ISFSObject objOut = new SFSObject();
+		objOut.PutUtfString("username", username);
+		NetworkManager.Instance.DeleteAccount(objOut);
 
-            }
-            deleteStatus = 0;
-        }//delete account
-        else
-             if (updateStatus == 1)
-        {
-            string result, msg = "";
-            if (CreateRoom == 1)
-            {
-                result = objIn.GetUtfString("CreateRoomResult");
-                msg = "Your room has been created and it's id is " + Room_ID;
-            }
-            else if (DeleteRoom == 1)
-            {
-                result = objIn.GetUtfString("DeleteRoom");
-                msg = "Your room has been deleted ";
-            }
-            else
-                result = objIn.GetUtfString("UpdateResult");
+	}//end delte account
 
 
-            if (result == "Successful")
-            {
-                Debug.Log("Successful");
-                if (msg != "")
-                    EditorUtility.DisplayDialog("Message", "               " + msg, "ok");
+	public void DeleteAccount(ISFSObject objIn)
+	{   ///method to display delete request result
+		string result = objIn.GetUtfString("DeleteResult");
 
-            }
-            else
-            {
-                Debug.Log("error");
-                // TextMessage.text = "Your account has not been updated";
+		if (result == "Successful."+username)
+		{
+			Debug.Log("Successful");
+			TextMessage.text = "Your account deleted successfully";
+			//	EditorUtility.DisplayDialog("Waring Message", "         Your account deleted successfully", "ok");
+			Home.gameObject.SetActive(true);//to display home page 
+			Delete.gameObject.SetActive(false);//to close curent delete form
+		}
+		else
+		{
+			Debug.Log("error");
+			TextMessage.text = "Your account has not been deleted";
+			//EditorUtility.DisplayDialog("Waring Message", "         Your account has not been deleted", "ok");
 
-            }
-            updateStatus = CreateRoom = DeleteRoom = 0;
-        }//delete account
+		}
+	}
 
-    }//end extension
-
-    public void OnDeleteButtonClocked()
-    {
-        Debug.Log("delete account");
-        if (sfs != null && sfs.IsConnected)
-        {
-            deleteStatus = 1;
-            Debug.Log("1");
-
-            ISFSObject objOut = new SFSObject();
-            objOut.PutUtfString("username", username);
-            sfs.Send(new ExtensionRequest("DeleteAccount", objOut));
-        }
-    }//delte account
+    
+    
 
     public void OnUpdateButtonClocked()
-    {
+	{  //on update button clicked, this values send to server to save them in DB
         int firstnameSpace, lastnameSpace;
 
         string Act_Room, Avt, Account_T, password;
-        if (sfs != null && sfs.IsConnected)
-        {
+
             Debug.Log("update account");
-            if (requredFilled())
+		if (requredFilled())//methos to check all required values filled
             {
                 firstnameSpace = FirstName.text.IndexOf(" ");
                 lastnameSpace = LastName.text.IndexOf(" ");
-                if (firstnameSpace == -1 && lastnameSpace == -1)
+			if (firstnameSpace == -1 && lastnameSpace == -1)//to make sure that names do not contains spaces
                 {
-                    if (View_Password.text == ConPassword.text)
+				if (View_Password.text == ConPassword.text)////to make sure that password and its confirm match
                     {
-                        updateStatus = 1;
-                        ISFSObject objOut = new SFSObject();
-                        if (ActivateRoom.isOn == true)
+                         ISFSObject objOut = new SFSObject();
+                        if (ActivateRoom.isOn == true)//store activate room request
                             Act_Room = "Y";
                         else
                             Act_Room = "N";
 
-                        if (AccountType.isOn == true)
+				    	if (AccountType.isOn == true)//store accout type request
                             Account_T = "private";
                         else
                             Account_T = "public";
 
-                        if (FAvatar.isOn == true)
+                        if (FAvatar.isOn == true) //store avatar gender
                             Avt = "F";
                         else
                             Avt = "M";
 
                         if (pass == View_Password.text)
-                            password = pass;
+						   password = pass;//if password not change, take it as it is
                         else
-                            password = PasswordUtil.MD5Password(View_Password.text);
+						   password = PasswordUtil.MD5Password(View_Password.text);//if password changed, encrypt it
 
-                        Room[] rooms = Transverser.Rooms;
+					    Room[] rooms = Transverser.Rooms;//get rooms from class Transverser store all rooms in city in rooms array
                         int length = rooms.Length;
                         Debug.Log("length : " + length);
-
+					    TextMessage.text = "";
                         if (length == RoomsNum && previousHasRoom == "N" && Act_Room == "Y")
                         {
-                            Act_Room = "N";
-                            EditorUtility.DisplayDialog("Waring Message", "Sorry, there is not any empty room.", "ok");
+                            Act_Room = "N";//since there no empty room 
+						    TextMessage.text ="Sorry, your request to have room did not activated, since there is not any empty room.\n";
+                            //EditorUtility.DisplayDialog("Waring Message", "Sorry, there is not any empty room.", "ok");
                         }
 
-                        objOut.PutUtfString("username", username);
-                        objOut.PutUtfString("account", "member");
-                        objOut.PutUtfString("password", password);
-                        objOut.PutUtfString("firstName", FirstName.text);
-                        objOut.PutUtfString("lastName", LastName.text);
-                        objOut.PutUtfString("biography", Biography.text);
-                        objOut.PutUtfString("hasRoom", Act_Room);
-                        objOut.PutUtfString("accountType", Account_T);
-                        objOut.PutUtfString("avatar", Avt);
+                        objOut.PutUtfString("username", username);//store username
+                        objOut.PutUtfString("account", "member");//user type
+                        objOut.PutUtfString("password", password);//store password
+                        objOut.PutUtfString("firstName", FirstName.text);//store first name
+                        objOut.PutUtfString("lastName", LastName.text);//store last name
+                        objOut.PutUtfString("biography", Biography.text);//store bio
+                        objOut.PutUtfString("hasRoom", Act_Room);//store has room request or not
+					    objOut.PutUtfString("accountType", Account_T);//store account type (private , public)
+                        objOut.PutUtfString("avatar", Avt);//store avatar gender
+    					NetworkManager.Instance.UpdateAccount(objOut);//send them to server
 
-                        sfs.Send(new ExtensionRequest("UpdateAccount", objOut));
-
-                        if (Avt == "M")
+                        if (Avt == "M")//acctivate choosen avatar
                         {
                             BoyAvatar.gameObject.SetActive(true);
-
-                            //GirlAvatar.gameObject.SetActive(false);
+                            GirlAvatar.gameObject.SetActive(false);
                         }
                         else
                         {
                             BoyAvatar.gameObject.SetActive(false);
-
-                            // GirlAvatar.gameObject.SetActive(true);
+                            GirlAvatar.gameObject.SetActive(true);
                         }
 
                         if (length < RoomsNum && previousHasRoom == "N" && Act_Room == "Y")
-                        {
-                            CreateRoom = 1;
+                        {//if there is an empty room
                             Debug.Log("activate room");
-
                             int i;
-                            if (length > 0)
+                            if (length > 0)//to find room id
                                 for (int j = 1; j <= length; j++)
                                 {
                                     for (i = 1; i <= length; i++)
@@ -396,18 +268,16 @@ public class manageMemberAccount : MonoBehaviour
                                     }
                                 }
 
-                            CreateRoom = 1;
                             Debug.Log("activate room");
                             Room room = new Room();
-                            room.CreateRoom(sfs, Room_ID, username, Account_T);
+                            room.CreateRoom(Room_ID, username, Account_T);//to create room
 
                         }
                         else if (previousHasRoom == "Y" && Act_Room == "N")
                         {
-                            DeleteRoom = 1;
                             Debug.Log("delete room");
                             Room room = new Room();
-                            room.DeleteRoom(sfs, username);
+                            room.DeleteRoom(username);//to delete room
                         }
                     }
                     else
@@ -418,7 +288,7 @@ public class manageMemberAccount : MonoBehaviour
             }
             else
                 TextMessage.text = "Missing to fill required value";
-        }
+        
     }
 
     private bool requredFilled()
@@ -429,24 +299,41 @@ public class manageMemberAccount : MonoBehaviour
             return true;
     }
 
-    private void reset()
-    {
-        // Remove SFS2X listeners
-        sfs.RemoveAllEventListeners();
+	public void UpdateAccount(ISFSObject objIn)
+	{///method to display edit request result  
+		string result = objIn.GetUtfString("UpdateResult");
+		if (result == "Successful." + username ) {//if account updated successfully
+			Debug.Log ("Successful");
+				TextMessage.text += "Your account updated successfully.";
+		} else {//if account not updated successfully
+			Debug.Log ("error");
+			TextMessage.text = "Your account has not been updated.";
+		}
+	}
 
-        sfs = null;
+	public void createRoom(ISFSObject objIn)
+	{
+		string result = objIn.GetUtfString("CreateRoomResult");
+		if (result == "Successful." + username ) {//if account updated successfully
+			Debug.Log ("Successful");
+			TextMessage.text +="\nYour room has been created and it's id is " + Room_ID;
+		} else {//if account not updated successfully
+			Debug.Log ("error");
+			TextMessage.text +="\nYour room has not been created";
+		}
+	}
 
-        // Enable interface
-        enableInterface(true);
-    }
+	public void deleteRoom(ISFSObject objIn)
+	{
+		string result = objIn.GetUtfString("DeleteRoom");
+ 		if (result == "Successful." + username ) {//if account updated successfully
+			Debug.Log ("Successful");
+			TextMessage.text +="\nYour room has been deleted " ;
+		} else {//if account not updated successfully
+			Debug.Log ("error");
+			TextMessage.text +="\nYour room has not been deleted ";
+		}
+	}
 
-    public void OnCancelButtonClickedt()
-    {
-        if (sfs != null && sfs.IsConnected)
-        {
-            sfs.Disconnect();
-            viewPage.gameObject.SetActive(false);
 
-        }
-    }
 }

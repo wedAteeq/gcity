@@ -257,11 +257,40 @@ public class NetworkManager : MonoBehaviour
 
 	}
 
-	/////////////////////////////////////////////////////////////////////ON Extension Response
-	/// 
-	///
-	// This method handles all the responses from the server
-	private void OnExtensionResponse(BaseEvent evt) {
+    public void GetAccountInfo(ISFSObject data)
+    {
+        ExtensionRequest request = new ExtensionRequest("ViewAccount.view", data, smartFox.LastJoinedRoom);
+        smartFox.Send(request);
+    }
+
+	public void DeleteAccount(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("ViewAccount.delete", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void UpdateAccount(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("ViewAccount.edit", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void CreateRoom(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.create", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void DeleteRoom(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.delete", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+    /////////////////////////////////////////////////////////////////////ON Extension Response
+    /// 
+    ///
+    // This method handles all the responses from the server
+    private void OnExtensionResponse(BaseEvent evt) {
 		Debug.Log ("inside: OnExtensionResponse");
 		try {
 			string cmd = (string)evt.Params["cmd"];
@@ -279,7 +308,44 @@ public class NetworkManager : MonoBehaviour
 			else if (cmd == "ReserveS") {//spwan Player
 				ManageAuction.Instance.ReserveSuccess();
 			}
-		
+			else if(cmd == "ViewAccount") {//spwan Player
+
+				ISFSArray useraccountinfo = dt.GetSFSArray("account");
+				string username = useraccountinfo.GetSFSObject(0).GetUtfString("username");
+
+				int AdminIndex = username.IndexOf("n");
+					string admin = username.Substring(0, AdminIndex + 1);
+
+				      if (admin.Equals("Admin"))
+					     manageAdminAccount.Instance.ViewAdminAccount(dt);
+				      else 
+					     manageMemberAccount.Instance.ViewMemberAccount(dt);
+			}
+			else if (cmd == "DeleteAccount") {//spwan Player
+				string result = dt.GetUtfString("DeleteResult");
+				int dotIndex = result.IndexOf(".");
+				string admin = result.Substring(dotIndex+1);
+				admin = admin.Substring(0, result.IndexOf("n")+1);
+				if (admin.Equals("Admin"))
+					manageAdminAccount.Instance.DeleteAccount(dt);
+				else
+					manageMemberAccount.Instance.DeleteAccount(dt);
+			}
+			else if (cmd == "UpdateAccount") {//spwan Player
+				string result = dt.GetUtfString("UpdateResult");
+				int dotIndex = result.IndexOf(".");
+				string admin = result.Substring(dotIndex+1);
+				admin = admin.Substring(0, result.IndexOf("n")+1);
+				if (admin.Equals("Admin"))
+					manageAdminAccount.Instance.UpdateAccount(dt);
+				else
+					manageMemberAccount.Instance.UpdateAccount(dt);
+
+			}else if (cmd == "CreateRoom") {//spwan Player
+				manageMemberAccount.Instance.createRoom(dt);
+			}else if (cmd == "DeleteRoom") {//spwan Player
+				manageMemberAccount.Instance.deleteRoom(dt);
+			}
 
 
 		}

@@ -3,8 +3,10 @@ using Sfs2X;
 using Sfs2X.Core;
 using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
-using Sfs2X.Util;
 using UnityEngine.UI;
+using Sfs2X.Util;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 using UnityEditor;
 
 public class manageAdminAccount : MonoBehaviour
@@ -13,13 +15,6 @@ public class manageAdminAccount : MonoBehaviour
     //----------------------------------------------------------
     // Private properties (Connection part)
     //----------------------------------------------------------
-    private string ServerIP = "127.0.0.1";// Default host
-    private int defaultTcpPort = 9933;// Default TCP port
-    private int defaultWsPort = 8888;			// Default WebSocket port
-    private string ZoneName = "3DexCityZone";
-    private int ServerPort = 0;
-
-    private SmartFox sfs;
     private string username;
 
     //----------------------------------------------------------
@@ -38,9 +33,7 @@ public class manageAdminAccount : MonoBehaviour
     public InputField LastName;
     public InputField Biography;
 
-    private int viewStatus = 0;
-    private int deleteStatus = 0;
-    private int updateStatus = 0;
+
     private string pass;
 
     //----------------------------------------------------------
@@ -48,83 +41,40 @@ public class manageAdminAccount : MonoBehaviour
     //----------------------------------------------------------
 
     // Use this for initialization
+	private static manageAdminAccount instance;
+	public static manageAdminAccount Instance
+	{
+		get
+		{
+			return instance;
+		}
+	}
+	void Awake()
+	{
+		instance = this;
+	}
+
     void Start()
     {
         TextMessage.text = "";
-
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        // As Unity is not thread safe, we process the queued up callbacks on every frame
-        if (sfs != null)
-            sfs.ProcessEvents();
-    }
+ 
 
     //----------------------------------------------------------
     // Public interface methods for UI
     //----------------------------------------------------------
 
-    public void OnViewMyAccountButtonclicked()
-    {
-        username = UserName.text;
-        Debug.Log("view account");
-        viewPage.gameObject.SetActive(true);
-        viewStatus = 1;
-        TextMessage.text = "";
-#if UNITY_WEBGL
-            {
-             sfs = new SmartFox(UseWebSocket.WS);
-             ServerPort = defaultWsPort;
-            }
-#else
-        {
-            sfs = new SmartFox();
-            ServerPort = defaultTcpPort;
-        }
-#endif
-
-        sfs.ThreadSafeMode = true;
-        sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-        sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
-        sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
-        sfs.Connect(ServerIP, ServerPort);
-
-    }//end
-
-    private void OnConnection(BaseEvent evt)
-    {
-        if ((bool)evt.Params["success"])
-        {
-            // Login
-            Debug.Log("Successfully Connected!");
-
-            sfs.Send(new LoginRequest("", "", ZoneName));
-        }
-        else
-        {
-            Debug.Log("Connection Failed!");
-            // Remove SFS2X listeners and re-enable interface
-            reset();
-
-            // Show error message
-            TextMessage.text = "Connection failed!";
-        }
-    }
-
-    private void OnLogin(BaseEvent evt)
-    {
-        Debug.Log("Logged In: " + evt.Params["user"]);
-
-        ISFSObject objOut = new SFSObject();
-        objOut.PutUtfString("username", username);
-        sfs.Send(new ExtensionRequest("ViewAccount", objOut));
-
-    }
+	public void OnViewMyAccountButtonclicked()
+	{   //on button view my account clicked by a member
+		//it will request the account info from the server
+		username = UserName.text;//variable to store username of the member
+		viewPage.gameObject.SetActive(true);//to acctivate view account form
+ 		TextMessage.text = "";//displayed error message
+		ISFSObject objOut = new SFSObject();
+		objOut.PutUtfString("username", username);
+		NetworkManager.Instance.GetAccountInfo(objOut);
+	}
 
     private void enableInterface(bool enable)
     {
@@ -132,162 +82,109 @@ public class manageAdminAccount : MonoBehaviour
 
     }
 
-    private void OnConnectionLost(BaseEvent evt)
-    {
-        // Remove SFS2X listeners and re-enable interface
-        reset();
 
-        string reason = (string)evt.Params["reason"];
+	public void ViewAdminAccount(ISFSObject objIn)
+	{   //method to display user account info after it retrieve the info from server
+		ISFSArray useraccountinfo = objIn.GetSFSArray("account");//object that contains all info
+		View_username.text = useraccountinfo.GetSFSObject(0).GetUtfString("username");//display username
+		pass = useraccountinfo.GetSFSObject(0).GetUtfString("password");
+		View_Password.text = pass;//display password as **** and encrypted
+		ConPassword.text = pass;//display confirm password as **** and encrypted
+		Email.text = useraccountinfo.GetSFSObject(0).GetUtfString("email");//display email
+		FirstName.text = useraccountinfo.GetSFSObject(0).GetUtfString("firstName");//display frstname
+		if (useraccountinfo.GetSFSObject(0).GetUtfString("biography") == null)//display bio
+			Biography.text = "";
+		else
+			Biography.text = useraccountinfo.GetSFSObject(0).GetUtfString("biography");
 
-        if (reason != ClientDisconnectionReason.MANUAL)
-        {
-            // Show error message
-            TextMessage.text = "Connection was lost; reason is: " + reason;
-        }
-    }//end
+		LastName.text = useraccountinfo.GetSFSObject(0).GetUtfString("lastName");//display lastname
+		Email.interactable = false;//disable changing email
+		View_username.interactable = false;//disable changing username
+	}
 
-    private void OnLoginError(BaseEvent evt)
-    {    // Show error message
-        string message = (string)evt.Params["errorMessage"];
-        // TextMessage.text = "Login failed: " + message;
-        Debug.Log("Login failed: " + message);
 
-        // Disconnect
-        sfs.Disconnect();
+      
 
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-    }
+	public void OnDeleteButtonClocked()
+	{//start
+		//on delete button clicked, the request
+		//to delete the account send to the server
+		ISFSObject objOut = new SFSObject();
+		objOut.PutUtfString("username", username);
+		NetworkManager.Instance.DeleteAccount(objOut);
 
-    private void OnExtensionResponse(BaseEvent evt)
-    {
-        Debug.Log("2: ");
+	}//end delte account
 
-        ISFSObject objIn = (SFSObject)evt.Params["params"];
-        if (viewStatus == 1)
-        {
-            ISFSArray useraccountinfo = objIn.GetSFSArray("account");
 
-            View_username.text = useraccountinfo.GetSFSObject(0).GetUtfString("username");
-            Debug.Log(View_username.text);
-            pass = useraccountinfo.GetSFSObject(0).GetUtfString("password");
-            View_Password.text = pass;
-            ConPassword.text = pass;
-            Email.text = useraccountinfo.GetSFSObject(0).GetUtfString("email");
-            FirstName.text = useraccountinfo.GetSFSObject(0).GetUtfString("firstName");
-            if (useraccountinfo.GetSFSObject(0).GetUtfString("biography") == null)
-                Biography.text = "";
-            else
-                Biography.text = useraccountinfo.GetSFSObject(0).GetUtfString("biography");
+	public void DeleteAccount(ISFSObject objIn)
+	{   ///method to display delete request result
+		string result = objIn.GetUtfString("DeleteResult");
 
-            LastName.text = useraccountinfo.GetSFSObject(0).GetUtfString("lastName");
+		if (result == "Successful."+username)
+		{
+			Debug.Log("Successful");
+			TextMessage.text = "Your account deleted successfully";
+			//	EditorUtility.DisplayDialog("Waring Message", "         Your account deleted successfully", "ok");
+ 			Home.gameObject.SetActive(true);//to display home page 
+			Delete.gameObject.SetActive(false);//to close curent delete form
+		}
+		else
+		{
+			Debug.Log("error");
+			TextMessage.text = "Your account has not been deleted";
+			//EditorUtility.DisplayDialog("Waring Message", "         Your account has not been deleted", "ok");
 
-            Email.interactable = false;
-            View_username.interactable = false;
-            Debug.Log(useraccountinfo.Size());
-            viewStatus = 0;
-        }//view account
-        else
-            if (deleteStatus == 1)
-        {
-            string result = objIn.GetUtfString("DeleteResult");
+		}
+	}
 
-            if (result == "Successful")
-            {
-                Debug.Log("Successful");
-                //TextMessage.text = "Your account deleted successfully";
-                EditorUtility.DisplayDialog("Waring Message", "         Your account deleted successfully", "ok");
-                Home.gameObject.SetActive(true);
-                Delete.gameObject.SetActive(false);
-            }
-            else
-            {
-                Debug.Log("error");
-                // TextMessage.text = "Your account has not been deleted";
-                EditorUtility.DisplayDialog("Waring Message", "         Your account has not been deleted", "ok");
 
-            }
-            deleteStatus = 0;
-        }//delete account
-        else
-             if (updateStatus == 1)
-        {
-            string result = objIn.GetUtfString("UpdateResult");
 
-            if (result == "Successful")
-            {
-                Debug.Log("Successful");
-                TextMessage.text = "Your account updated successfully";
-
-            }
-            else
-            {
-                Debug.Log("error");
-                TextMessage.text = "Your account has not been updated";
-
-            }
-            updateStatus = 0;
-        }//delete account
-
-    }
-
-    public void OnDeleteButtonClocked()
-    {
-        Debug.Log("delete account");
-        if (sfs != null && sfs.IsConnected)
-        {
-            deleteStatus = 1;
-            Debug.Log("1");
-
-            ISFSObject objOut = new SFSObject();
-            objOut.PutUtfString("username", username);
-            sfs.Send(new ExtensionRequest("DeleteAccount", objOut));
-        }
-    }//delte account
-
-    public void OnUpdateButtonClocked()
-    {
+	public void OnUpdateButtonClocked()
+    {  //on update button clicked, this values send to server to save them in DB
         int firstnameSpace, lastnameSpace;
         string password;
-        if (sfs != null && sfs.IsConnected)
-        {
-            Debug.Log("update account");
-            if (requredFilled())
-            {
-                firstnameSpace = FirstName.text.IndexOf(" ");
+             Debug.Log("update account");
+            if (requredFilled())//methos to check all required values filled
+            {   firstnameSpace = FirstName.text.IndexOf(" ");
                 lastnameSpace = LastName.text.IndexOf(" ");
-                if (firstnameSpace == -1 && lastnameSpace == -1)
+                if (firstnameSpace == -1 && lastnameSpace == -1)//to make sure that names do not contains spaces
                 {
-                    if (View_Password.text == ConPassword.text)
-                    {
-                        updateStatus = 1;
-                        ISFSObject objOut = new SFSObject();
-
+				if (View_Password.text == ConPassword.text)////to make sure that password and its confirm match
+                    { ISFSObject objOut = new SFSObject();
                         if (pass == View_Password.text)
-                            password = pass;
+                            password = pass;//if password not change, take it as it is
                         else
-                            password = PasswordUtil.MD5Password(View_Password.text);
-
+						     password = PasswordUtil.MD5Password(View_Password.text);//if password changed, encrypt it
                         objOut.PutUtfString("username", username);
                         objOut.PutUtfString("account", "Admin");
                         objOut.PutUtfString("password", password);
                         objOut.PutUtfString("firstName", FirstName.text);
                         objOut.PutUtfString("lastName", LastName.text);
                         objOut.PutUtfString("biography", Biography.text);
-
-
-                        sfs.Send(new ExtensionRequest("UpdateAccount", objOut));
+						NetworkManager.Instance.UpdateAccount(objOut);
                     }
-                    else
+                    else //error mesages "not maching passwords"
                         TextMessage.text = "The password and its confirm are not matching";
                 }
-                else
+			else//error mesages "spaces in names"
                     TextMessage.text = "firstname & lastname should not contains a space";
             }
-            else
+		else  //error mesages "missing required values"
                 TextMessage.text = "Missing to fill required value";
-        }
     }
+
+	public void UpdateAccount(ISFSObject objIn)
+	{///method to display edit request result  
+		string result = objIn.GetUtfString("UpdateResult");
+		if (result == "Successful." + username) {//if account updated successfully
+			Debug.Log ("Successful");
+			TextMessage.text = "Your account updated successfully";
+
+		} else {//if account not updated successfully
+			Debug.Log ("error");
+			TextMessage.text = "Your account has not been updated";
+		}
+	}
 
     private bool requredFilled()
     {
@@ -297,23 +194,6 @@ public class manageAdminAccount : MonoBehaviour
             return true;
     }
 
-    private void reset()
-    {
-        // Remove SFS2X listeners
-        sfs.RemoveAllEventListeners();
 
-        sfs = null;
-
-        // Enable interface
-        enableInterface(true);
-    }
-    public void OnCancelButtonClickedt()
-    {
-        if (sfs != null && sfs.IsConnected)
-        {
-            sfs.Disconnect();
-            viewPage.gameObject.SetActive(false);
-
-        }
-    }
+   
 }

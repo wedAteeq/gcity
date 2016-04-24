@@ -98,16 +98,16 @@ public class MemLog : MonoBehaviour {
 	//-----------------------------------------------------------------------ON Button Clicked
 
 	public void OnLogOutButtonClicked()
-	{
+	{//on logoutbuton clicked this function called
 		// Disconnect from server
 		if (sfs != null && sfs.IsConnected)
 		{
 			sfs.Disconnect();
 		}
-		logount.gameObject.SetActive(false);
-		Home.gameObject.SetActive(true);
-		AdminView.gameObject.SetActive(false);
-		MemberView.gameObject.SetActive(false);
+		logount.gameObject.SetActive(false);//close confirn logount form  
+		Home.gameObject.SetActive(true);//open home page
+		AdminView.gameObject.SetActive(false);//close admin view page  
+		MemberView.gameObject.SetActive(false);//closme member view page 
 	}
 
 	//-----------------------------------------------------------------------Reset

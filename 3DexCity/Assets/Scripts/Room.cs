@@ -31,6 +31,18 @@ public class Room : MonoBehaviour
     Material temp; //i need this in arrange to swap between texture
     public Text test;
     string checkedMessage; //i need it for displaying message when the avatar in the room
+	private static Room instance;
+	public static Room Instance
+	{
+		get
+		{
+			return instance;
+		}
+	}
+	void Awake()
+	{
+		instance = this;
+	}
 
 
     void Start()
@@ -208,10 +220,8 @@ public class Room : MonoBehaviour
     }
 
 
-    public void CreateRoom(SmartFox sfs2x, int Room_ID, string user, string account)
+    public void CreateRoom( int Room_ID, string user, string account)
     {
-        sfs = sfs2x;
-
         Debug.Log("in method ");
         userName = user;
         accountType = account;
@@ -219,19 +229,31 @@ public class Room : MonoBehaviour
         objOut.PutUtfString("Room_ID", Room_ID + "");
         objOut.PutUtfString("username", userName);
         objOut.PutUtfString("accountType", accountType);
-        sfs.Send(new ExtensionRequest("CreateRoom", objOut));
+		NetworkManager.Instance.CreateRoom(objOut);
+
 
     }
+	public void createRoom( SmartFox sfs2x,int Room_ID, string user, string account)
+	{
+		sfs = sfs2x;
 
-    public void DeleteRoom(SmartFox sfs2x, string user)
+		Debug.Log("in method ");
+		userName = user;
+		accountType = account;
+		ISFSObject objOut = new SFSObject();
+		objOut.PutUtfString("Room_ID", Room_ID + "");
+		objOut.PutUtfString("username", userName);
+		objOut.PutUtfString("accountType", accountType);
+		sfs.Send(new ExtensionRequest("createRoom", objOut));
+	}
+
+    public void DeleteRoom( string user)
     {
-        sfs = sfs2x;
-
         Debug.Log("in method ");
         userName = user;
         ISFSObject objOut = new SFSObject();
         objOut.PutUtfString("username", userName);
-        sfs.Send(new ExtensionRequest("DeleteRoom", objOut));
+		NetworkManager.Instance.DeleteRoom(objOut);
     }
 
     public void getAllRooms(SmartFox sfs2x)

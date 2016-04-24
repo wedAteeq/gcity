@@ -82,31 +82,31 @@ public class CreateAccount : MonoBehaviour
 
 
     public void OnCreateAccountButtonClicked()
-    {
+	{   //on create button clicked, all values are stored in variables then login to server 
         int usernameSpace, firstnameSpace, lastnameSpace;
-        username = UserName.text;
+        username = UserName.text;//to store username
         usernameSpace = username.IndexOf(" ");
-        password = Password.text;
-        Conpassword = ConPassword.text;
-        email = Email.text;
-        biography = Biography.text;
-        firstname = FirstName.text;
+        password = Password.text;//to store password
+        Conpassword = ConPassword.text;//to store confirm password
+        email = Email.text;///tpstore email
+        biography = Biography.text;//to store bio
+        firstname = FirstName.text;//to storefirst name
         firstnameSpace = firstname.IndexOf(" ");
-        lastname = LastName.text;
+        lastname = LastName.text;//to store last name
         lastnameSpace = lastname.IndexOf(" ");
-        bool ARoom = ActivateRoom.isOn;
+        bool ARoom = ActivateRoom.isOn;//to store activate room
         if (ARoom == true)
             Act_Room = "Y";
         else
             Act_Room = "N";
 
-        bool Account = AccountType.isOn;
+		bool Account = AccountType.isOn;//to store account type (public, private)
         if (Account == true)
             Account_T = "private";
         else
             Account_T = "public";
 
-        bool avatar = MAvatar.isOn;
+        bool avatar = MAvatar.isOn;//to store avatar gender
         if (avatar == true)
             Avt = "M";
         else
@@ -115,41 +115,39 @@ public class CreateAccount : MonoBehaviour
         int AdminIndex = username.IndexOf("n");
         string admin = username.Substring(0, AdminIndex + 1);
 
-
-        if (requredFilled())
+        if (requredFilled())//method to check that all required values filled
         {
-            if (usernameSpace == -1 && firstnameSpace == -1 && lastnameSpace == -1)
+            if (usernameSpace == -1 && firstnameSpace == -1 && lastnameSpace == -1)//to prevent spaces in names 
             {
-                if (!admin.Equals("Admin"))
+                if (!admin.Equals("Admin"))//to prevent the name start with "Admin" 
                 {
-                    if (password == Conpassword)
+					if (password == Conpassword)//to check password and it's confirm are matching
                     {
-                        if (email.IndexOf("@") != -1)
+                        if (email.IndexOf("@") != -1)//to validate email
                         {   // Enable interface
-                            enableInterface(false);
-
-#if UNITY_WEBGL
+                            enableInterface(false);//method to disable typying in input field while proccesing
+							///connect with server
+							#if UNITY_WEBGL//type of building "WEBGL"
                         {
                          sfs = new SmartFox(UseWebSocket.WS);
                          ServerPort = defaultWsPort;
                         }
-#else
+							#else //type of building "Web player"
                             {
                                 sfs = new SmartFox();
                                 ServerPort = defaultTcpPort;
                             }
-#endif
-                            sfs.ThreadSafeMode = true;
-
+                            #endif
+                            sfs.ThreadSafeMode = true;//create threds
+							//events listeners
                             sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
                             sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
                             sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
                             sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
                             sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
                             sfs.Connect(ServerIP, ServerPort);
 
-                            enableInterface(true);
+							enableInterface(true);//method to enable typying in input field while proccesing
                             UserName.text = "";
                             Password.text = "";
                             ConPassword.text = "";
@@ -158,19 +156,19 @@ public class CreateAccount : MonoBehaviour
                             LastName.text = "";
 
                         }
-                        else
+                        else //error messages "invalid email"
                             TextMessage.text = "Invalid email account";
                     }
-                    else
+					else //error messages "password not equal to it's confirm"
                         TextMessage.text = "The password and its confirm are not matching";
                 }
-                else
+				else //error messages "username not start with admin"
                     TextMessage.text = "The username should not start with \"Admin\" string";
             }
-            else
+			else//error messages "names must not contains spaces"
                 TextMessage.text = "Username,firstname & lastname should not contains a space";
         }
-        else
+		else//error messages "missing values"
             TextMessage.text = "Missing to fill required value";
 
 
@@ -231,7 +229,7 @@ public class CreateAccount : MonoBehaviour
                 Error = 1;
                 message = objIn.GetUtfString("errorMessage");
                 message = "Signup Error: " + message;
-                EditorUtility.DisplayDialog("Waring Message", message, "ok");
+                //EditorUtility.DisplayDialog("Waring Message", message, "ok");
                 Debug.Log(message);
                 TextMessage.text = message;
                 reset();
@@ -269,7 +267,7 @@ public class CreateAccount : MonoBehaviour
                 CreateRoom = 1;
                 Debug.Log("activate room");
                 Room room = new Room();
-                room.CreateRoom(sfs, Room_ID, username, Account_T);
+                room.createRoom(sfs, Room_ID, username, Account_T);
 
             }
             else
@@ -356,7 +354,7 @@ public class CreateAccount : MonoBehaviour
     }
 
     private void OnLogin(BaseEvent evt)
-    {
+    {   //this method will send values to server in order to create account
         Debug.Log("Logged In: " + evt.Params["user"]);
         Error = 0;
 
@@ -364,16 +362,15 @@ public class CreateAccount : MonoBehaviour
         Transverser.MemberUsername = username;
         Transverser.MemberEmail = email;
 
-        objOut.PutUtfString("username", username);
-        objOut.PutUtfString("password", password);
-        objOut.PutUtfString("email", email);
-        objOut.PutUtfString("firstName", firstname);
-        objOut.PutUtfString("lastName", lastname);
-        objOut.PutUtfString("biography", biography);
-        objOut.PutUtfString("hasRoom", Act_Room);
-        objOut.PutUtfString("accountType", Account_T);
-        objOut.PutUtfString("avatar", Avt);
-
+        objOut.PutUtfString("username", username);//store username
+        objOut.PutUtfString("password", password);//store password
+        objOut.PutUtfString("email", email);//store email
+        objOut.PutUtfString("firstName", firstname);//store first name
+        objOut.PutUtfString("lastName", lastname);//store last name
+        objOut.PutUtfString("biography", biography);//store bio
+        objOut.PutUtfString("hasRoom", Act_Room);//store has room values
+        objOut.PutUtfString("accountType", Account_T);//store account type
+        objOut.PutUtfString("avatar", Avt);//store avatar gender
         sfs.Send(new ExtensionRequest(CMD_Signup, objOut));
 
 
