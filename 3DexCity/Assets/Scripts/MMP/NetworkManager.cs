@@ -26,6 +26,7 @@ public class NetworkManager : MonoBehaviour
 	private Dictionary<int, NetworkTransformReceiver> recipients = new Dictionary<int, NetworkTransformReceiver>();
 	private bool running = false;
 	private string aucname="";
+	private string Request1,Request2;
 	private static NetworkManager instance;
 	public static NetworkManager Instance {
 		get {
@@ -257,15 +258,17 @@ public class NetworkManager : MonoBehaviour
 
 	}
 
-    public void GetAccountInfo(ISFSObject data)
+	public void GetAccountInfo(ISFSObject data,String userRequest)
     {
         ExtensionRequest request = new ExtensionRequest("ViewAccount.view", data, smartFox.LastJoinedRoom);
+		Request1=userRequest;
         smartFox.Send(request);
     }
 
-	public void DeleteAccount(ISFSObject data)
+	public void DeleteAccount(ISFSObject data,String userRequest)
 	{
 		ExtensionRequest request = new ExtensionRequest("ViewAccount.delete", data, smartFox.LastJoinedRoom);
+		Request2=userRequest;
 		smartFox.Send(request);
 	}
 
@@ -318,8 +321,11 @@ public class NetworkManager : MonoBehaviour
 
 				      if (admin.Equals("Admin"))
 					     manageAdminAccount.Instance.ViewAdminAccount(dt);
-				      else 
+				else if (Request1=="")
 					     manageMemberAccount.Instance.ViewMemberAccount(dt);
+				else if (Request1=="AdminRequest")
+					ViewMemberAccount.Instance.ViewAccountInfo(dt);
+				
 			}
 			else if (cmd == "DeleteAccount") {//spwan Player
 				string result = dt.GetUtfString("DeleteResult");
@@ -328,8 +334,10 @@ public class NetworkManager : MonoBehaviour
 				admin = admin.Substring(0, result.IndexOf("n")+1);
 				if (admin.Equals("Admin"))
 					manageAdminAccount.Instance.DeleteAccount(dt);
-				else
+				else if (Request2=="")
 					manageMemberAccount.Instance.DeleteAccount(dt);
+				else if (Request2=="AdminRequest")
+					ViewMemberAccount.Instance.DeleteAccount(dt);
 			}
 			else if (cmd == "UpdateAccount") {//spwan Player
 				string result = dt.GetUtfString("UpdateResult");

@@ -54,41 +54,38 @@ public class ForgetPassword : MonoBehaviour
     //----------------------------------------------------------
 
     public void OnResetPasswordButtonClicked()
-    {
+    {  //on reset password button clicked, login to server zone and reset password
         username = UserName.text;
-        if (username == "" || username == " ")
+        if (username == "" || username == " ")//to check the value
             TextMessage.text = "Missing to fill required value";
         else
         {  // Enable interface
-            enableInterface(false);
+            enableInterface(false);//methods to disable typing in input field
 
-#if UNITY_WEBGL
+          #if UNITY_WEBGL//type of build "WebGl"
             {
              sfs = new SmartFox(UseWebSocket.WS);
              ServerPort = defaultWsPort;
             }
-#else
+            #else//type of build "web player"
             {
                 sfs = new SmartFox();
                 ServerPort = defaultTcpPort;
             }
-#endif
+              #endif
 
-            sfs.ThreadSafeMode = true;
-
+            sfs.ThreadSafeMode = true;//create tread to the user
+			// Event Listeners
             sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
             sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
             sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
             sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
             sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
-            sfs.Connect(ServerIP, ServerPort);
-            enableInterface(true);
+			sfs.Connect(ServerIP, ServerPort);//connecting 
+			enableInterface(true);//methods to enable typing in input field
             UserName.text = "";
             TextMessage.text = "";
-
         }
-
     }
 
     private void reset()
@@ -129,17 +126,15 @@ public class ForgetPassword : MonoBehaviour
             {
                 message = objIn.GetUtfString("errorMessage");
                 Debug.Log(message);
-                //TextMessage.text = message;
-                EditorUtility.DisplayDialog("Waring Message", message, "ok");
-
+                TextMessage.text = message;
+                ///EditorUtility.DisplayDialog("Waring Message", message, "ok");
             }
             else
             {
                 message = "The password was sent to your email box";
                 Debug.Log(message);
-                // TextMessage.text = message;
-                EditorUtility.DisplayDialog("Waring Message", "         " + message, "ok");
-
+                TextMessage.text = message;
+                //EditorUtility.DisplayDialog("Waring Message", "         " + message, "ok");
                 forgetPassword.gameObject.SetActive(false);
                 login.gameObject.SetActive(true);
             }
@@ -179,13 +174,10 @@ public class ForgetPassword : MonoBehaviour
     }
 
     void OnLogin(BaseEvent e)
-    {
+	{//to send reset password request to server after login to zone
         Debug.Log("Logged In: " + e.Params["user"]);
-
         ISFSObject objOut = new SFSObject();
-
         objOut.PutUtfString("username", username);
-
         sfs.Send(new ExtensionRequest(CMD_RECOVER, objOut));
 
     }

@@ -73,7 +73,7 @@ public class manageAdminAccount : MonoBehaviour
  		TextMessage.text = "";//displayed error message
 		ISFSObject objOut = new SFSObject();
 		objOut.PutUtfString("username", username);
-		NetworkManager.Instance.GetAccountInfo(objOut);
+		NetworkManager.Instance.GetAccountInfo(objOut,"");
 	}
 
     private void enableInterface(bool enable)
@@ -111,7 +111,7 @@ public class manageAdminAccount : MonoBehaviour
 		//to delete the account send to the server
 		ISFSObject objOut = new SFSObject();
 		objOut.PutUtfString("username", username);
-		NetworkManager.Instance.DeleteAccount(objOut);
+		NetworkManager.Instance.DeleteAccount(objOut,"");
 
 	}//end delte account
 
