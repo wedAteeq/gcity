@@ -10,20 +10,25 @@ using Sfs2X.Requests;
 public class ScrollableNotificationsPanel : MonoBehaviour
 {
 
-    // Use this for initialization
-    private string ServerIP = "127.0.0.1";// Default host
-    private int defaultTcpPort = 9933;// Default TCP port
-    private int defaultWsPort = 8888;           // Default WebSocket port
-    private string ZoneName = "3DexCityZone";
-    private int ServerPort = 0;
-
-    private SmartFox sfs;
+   
     private ISFSArray useraccountinfo;
     private int itemCount, columnCount = 1;
     private string decision, Room_ID, username;
 
     public GameObject itemPrefab;
     public GameObject itemPrefab1Parent;
+	private static ScrollableNotificationsPanel instance;
+	public static ScrollableNotificationsPanel Instance
+	{
+		get
+		{
+			return instance;
+		}
+	}
+	void Awake()
+	{
+		instance = this;
+	}
 
     public void Start()
     {
@@ -139,131 +144,45 @@ public class ScrollableNotificationsPanel : MonoBehaviour
     }
 
 
-    void Update()
-    {
-        // As Unity is not thread safe, we process the queued up callbacks on every frame
-        if (sfs != null)
-            sfs.ProcessEvents();
-
-    }
-
+   
 
     public void OnDecisionButtonClicked()
-    {
+	{   //on accept/reject request access private room button clicked,
+		//send the request to server
+		//to get clicked button name (accept/reject)
         string name = EventSystem.current.currentSelectedGameObject.name;
-        int SpaceIndex = name.IndexOf(" ");
-        string DecisionButtonName = name.Substring(0, SpaceIndex);
-        DecisionButtonName = DecisionButtonName.ToLower();
-        string DBIndex = name.Substring(SpaceIndex + 1);
-        int index = int.Parse(DBIndex);
+        int SpaceIndex = name.IndexOf(" ");//ge space index
+        string DecisionButtonName = name.Substring(0, SpaceIndex);//get the decision 
+        DecisionButtonName = DecisionButtonName.ToLower();//convert it to lower letters
+        string DBIndex = name.Substring(SpaceIndex + 1);//get the request index in DB
+        int index = int.Parse(DBIndex);//parse it to integer
         Debug.Log(" index " + index + " decision: " + DecisionButtonName + " room " + Room_ID);
-        Room_ID = Transverser.RoomID;
+        Room_ID = Transverser.RoomID;//get requested user room id
         decision = DecisionButtonName;
+		//get username of the requster
         username = Transverser.userinfo.GetSFSObject(index).GetUtfString("username");
         Debug.Log("username: " + username + " decision: " + decision + " room " + Room_ID);
-
-#if UNITY_WEBGL
-		{
-		sfs = new SmartFox(UseWebSocket.WS);
-		ServerPort = defaultWsPort;
-		}
-#else
-        {
-            sfs = new SmartFox();
-            ServerPort = defaultTcpPort;
-        }
-#endif
-
-        sfs.ThreadSafeMode = true;
-        sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-        sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
-        sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
-        sfs.Connect(ServerIP, ServerPort);
-    }
-
-    private void OnConnection(BaseEvent evt)
-    {
-        if ((bool)evt.Params["success"])
-        {
-            // Login
-            Debug.Log("Successfully Connected!");
-
-            sfs.Send(new LoginRequest("", "", ZoneName));
-        }
-        else
-        {
-            Debug.Log("Connection Failed!");
-            // Remove SFS2X listeners and re-enable interface
-            reset();
-
-            // Show error message
-            Debug.Log("Connection failed; is the server running at all?");
-        }
-    }
-
-    private void OnLogin(BaseEvent evt)
-    {
-        Debug.Log("Logged In: " + evt.Params["user"]);
-
         ISFSObject objOut = new SFSObject();
         objOut.PutUtfString("Room_ID", Room_ID);
         objOut.PutUtfString("username", username);
         objOut.PutUtfString("decision", decision);
         Debug.Log("username: " + username + " decision: " + decision + " room " + Room_ID);
-        sfs.Send(new ExtensionRequest("Decision", objOut));
+		NetworkManager.Instance.Decision(objOut,"AccessRoom");//send the access decision to server
     }
 
 
 
-    private void OnConnectionLost(BaseEvent evt)
-    {
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-
-        string reason = (string)evt.Params["reason"];
-
-        if (reason != ClientDisconnectionReason.MANUAL)
-        {
-            // Show error message
-            Debug.Log("Connection was lost; reason is: " + reason);
-        }
-    }//end
-
-    private void OnLoginError(BaseEvent evt)
-    {    // Show error message
-        string message = (string)evt.Params["errorMessage"];
-        Debug.Log("Login failed: " + message);
-
-        // Disconnect
-        sfs.Disconnect();
-
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-    }
-
-    private void OnExtensionResponse(BaseEvent evt)
-    {
-        Debug.Log("extension");
-
-        ISFSObject objIn = (SFSObject)evt.Params["params"];
+	public void AccessDecision(ISFSObject objIn)
+	{
         string result = objIn.GetUtfString("Result");
 
         if (result == "Successful")
             Debug.Log("Successful");
         else
             Debug.Log("error");
-
     }//end extension
 
-    private void reset()
-    {
-        // Remove SFS2X listeners
-        sfs.RemoveAllEventListeners();
-        sfs = null;
-    }
+    
 
 }
 

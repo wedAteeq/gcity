@@ -26,7 +26,7 @@ public class NetworkManager : MonoBehaviour
 	private Dictionary<int, NetworkTransformReceiver> recipients = new Dictionary<int, NetworkTransformReceiver>();
 	private bool running = false;
 	private string aucname="";
-	private string Request1,Request2;
+	private string Request1,Request2,userDecision;
 	private static NetworkManager instance;
 	public static NetworkManager Instance {
 		get {
@@ -289,6 +289,48 @@ public class NetworkManager : MonoBehaviour
 		ExtensionRequest request = new ExtensionRequest("Room.delete", data, smartFox.LastJoinedRoom);
 		smartFox.Send(request);
 	}
+
+	public void RequestAccessRoom(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.accessRequest", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void GetNotifications(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.getNotifications", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void GetNotifications()
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.getAuctions", new SFSObject(), smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void GetFriendsList(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.getFriends", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void Decision(ISFSObject data,string decision)
+	{   userDecision = decision;
+		ExtensionRequest request = new ExtensionRequest("Room.decision", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void AuctionDecision(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.auction", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
+
+	public void AddNewAdmin(ISFSObject data)
+	{
+		ExtensionRequest request = new ExtensionRequest("Room.addAdmin", data, smartFox.LastJoinedRoom);
+		smartFox.Send(request);
+	}
     /////////////////////////////////////////////////////////////////////ON Extension Response
     /// 
     ///
@@ -353,7 +395,26 @@ public class NetworkManager : MonoBehaviour
 				manageMemberAccount.Instance.createRoom(dt);
 			}else if (cmd == "DeleteRoom") {//spwan Player
 				manageMemberAccount.Instance.deleteRoom(dt);
+			}else if (cmd == "RequestAccessRoom") {//spwan Player
+				RequestAccess.Instance.RequestAccessPRoom(dt);
+			}else if (cmd == "ViewNotifications") {//spwan Player
+				ViewNotifications.Instance.ViewMyNotifications(dt);
+			}else if (cmd == "ViewFriends") {//spwan Player
+				ViewFriends.Instance.ViewMyFriends(dt);
+			}else if (cmd == "ViewAuctionRequests") {//spwan Player
+				ViewAuction.Instance.ViewMyNotifications(dt);
+			}else if (cmd == "Decision") {//spwan Player
+				if (userDecision=="AccessRoom")
+				ScrollableNotificationsPanel.Instance.AccessDecision(dt);
+				else 
+					ScrollableFriendsPanel.Instance.DeleteDecision(dt);
+			}else if (cmd == "AuctionDecision") {//spwan Player
+				ScrollableAdminNotificationsPanel.Instance.AuctionDecision(dt);
+			}else if (cmd == "AddAdmin") {//spwan Player
+				AddAdmin.Instance.AddNewAdminResult(dt);
 			}
+
+
 
 
 		}

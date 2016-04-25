@@ -13,13 +13,7 @@ public class ViewNotifications : MonoBehaviour
     //----------------------------------------------------------
     // Private properties (Connection part)
     //----------------------------------------------------------
-    private string ServerIP = "127.0.0.1";// Default host
-    private int defaultTcpPort = 9933;// Default TCP port
-    private int defaultWsPort = 8888;           // Default WebSocket port
-    private string ZoneName = "3DexCityZone";
-    private int ServerPort = 0;
-
-    private SmartFox sfs;
+  
     private string Room_ID;
     private ISFSArray useraccountinfo;
     private int display = 0;
@@ -34,134 +28,60 @@ public class ViewNotifications : MonoBehaviour
     //----------------------------------------------------------
     // Unity calback methods
     //----------------------------------------------------------
-
+	private static ViewNotifications instance;
+	public static ViewNotifications Instance
+	{
+		get
+		{
+			return instance;
+		}
+	}
+	void Awake()
+	{
+		instance = this;
+	}
     // Use this for initialization
     void Start()
     {
     }
 
     // Update is called once per frame
-    void Update()
-    {
-        // As Unity is not thread safe, we process the queued up callbacks on every frame
-        if (sfs != null)
-            sfs.ProcessEvents();
-    }
+  
 
     //----------------------------------------------------------
     // Public interface methods for UI
     //----------------------------------------------------------
 
     public void OnViewNotificationsButtonclicked()
-    {
-        Transverser.itemPrefab1 = itemPrefab;
-        Transverser.itemPrefab1Parent = Parent;
-
-        Room_ID = Transverser.MyRoomID;
-
-#if UNITY_WEBGL
-		{
-		sfs = new SmartFox(UseWebSocket.WS);
-		ServerPort = defaultWsPort;
-		}
-#else
-        {
-            sfs = new SmartFox();
-            ServerPort = defaultTcpPort;
-        }
-#endif
-
-        sfs.ThreadSafeMode = true;
-        sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-        sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
-        sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
-        sfs.Connect(ServerIP, ServerPort);
-
-    }//end
-
-    private void OnConnection(BaseEvent evt)
-    {
-        if ((bool)evt.Params["success"])
-        {
-            // Login
-            Debug.Log("Successfully Connected!");
-
-            sfs.Send(new LoginRequest("", "", ZoneName));
-        }
-        else
-        {
-            Debug.Log("Connection Failed!");
-            // Remove SFS2X listeners and re-enable interface
-            reset();
-
-            // Show error message
-            Debug.Log("Connection failed; is the server running at all?");
-        }
-    }
-
-    private void OnLogin(BaseEvent evt)
-    {
-        Debug.Log("Logged In: " + evt.Params["user"]);
-
+	{//on view member notification button clicked, sent 
+		//view notitifications request to server
+		//store the frame that notitifications values will be displayed on
+		Transverser.itemPrefab1 = itemPrefab;
+		//store the panel that notitifications will be displayed on
+		Transverser.itemPrefab1Parent = Parent;
+		Room_ID = Transverser.MyRoomID;//get user room ID
         ISFSObject objOut = new SFSObject();
         objOut.PutUtfString("Room_ID", Room_ID);
-        sfs.Send(new ExtensionRequest("ViewNotifications", objOut));
-    }
+		NetworkManager.Instance.GetNotifications(objOut);//send request to server
+	}//end OnViewNotificationsButtonclicked
 
 
 
-    private void OnConnectionLost(BaseEvent evt)
-    {
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-
-        string reason = (string)evt.Params["reason"];
-
-        if (reason != ClientDisconnectionReason.MANUAL)
-        {
-            // Show error message
-            Debug.Log("Connection was lost; reason is: " + reason);
-        }
-    }//end
-
-    private void OnLoginError(BaseEvent evt)
-    {    // Show error message
-        string message = (string)evt.Params["errorMessage"];
-        Debug.Log("Login failed: " + message);
-
-        // Disconnect
-        sfs.Disconnect();
-
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-    }
-
-    private void OnExtensionResponse(BaseEvent evt)
-    {
-        Debug.Log("extension");
-
-        ISFSObject objIn = (SFSObject)evt.Params["params"];
-
-        useraccountinfo = objIn.GetSFSArray("Notifications");
+	public void ViewMyNotifications(ISFSObject objIn)
+	{   //this function will get notifications from server and display it to the member
+		useraccountinfo = objIn.GetSFSArray("Notifications");
         Transverser.userinfo = null;
-        Transverser.userinfo = useraccountinfo;
-        Transverser.RoomID = Room_ID;
+        Transverser.userinfo = useraccountinfo;//to store notifications 
+        Transverser.RoomID = Room_ID;//to store room ID
         Debug.Log("Display Notifications");
+		//display form that will show the notifications
         NotificationForm.gameObject.SetActive(true);
+		//class that will deal with notification form contents
         ScrollableNotificationsPanel m = new ScrollableNotificationsPanel();
-        if (display > 0)
+        if (display > 0)//to allaw request notification from server each time
             m.Start();
         display++;
-    }//end extension
+	}//end viewMyNotifications
 
-    private void reset()
-    {
-        // Remove SFS2X listeners
-        sfs.RemoveAllEventListeners();
-        sfs = null;
-    }
-
+   
 }

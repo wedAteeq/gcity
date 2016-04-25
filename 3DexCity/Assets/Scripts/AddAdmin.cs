@@ -12,14 +12,6 @@ public class AddAdmin : MonoBehaviour
     //----------------------------------------------------------
     // Private properties (Connection part)
     //----------------------------------------------------------
-    private string ServerIP = "127.0.0.1";// Default host
-    private int defaultTcpPort = 9933;// Default TCP port
-    private int defaultWsPort = 8888;			// Default WebSocket port
-    private string ZoneName = "3DexCityZone";
-    private int ServerPort = 0;
-
-
-    private SmartFox sfs;
     private string username;
     private string password;
     private string Conpassword;
@@ -27,8 +19,6 @@ public class AddAdmin : MonoBehaviour
     private string biography;
     private string firstname;
     private string lastname;
-
-
 
     //----------------------------------------------------------
     // UI elements
@@ -45,8 +35,18 @@ public class AddAdmin : MonoBehaviour
     public Transform SuccesResult;
     public Transform createAccount;
 
-    string CMD_Signup = "$SignUp.Submit";
-
+	private static AddAdmin instance;
+	public static AddAdmin Instance
+	{
+		get
+		{
+			return instance;
+		}
+	}
+	void Awake()
+	{
+		instance = this;
+	}
 
     // Use this for initialization
     void Start()
@@ -64,201 +64,79 @@ public class AddAdmin : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
-    {
-        // As Unity is not thread safe, we process the queued up callbacks on every frame
-        if (sfs != null)
-            sfs.ProcessEvents();
-    }
-
+   
     //----------------------------------------------------------
     // Public interface methods for UI
     //----------------------------------------------------------
 
 
     public void OnCreateAccountButtonClicked()
-    {
+    {   //on create account button clicked
         int usernameSpace, firstnameSpace, lastnameSpace;
-
-        username = UserName.text;
-        usernameSpace = username.IndexOf(" ");
-        password = Password.text;
-        Conpassword = ConPassword.text;
-        email = Email.text;
-        biography = Biography.text;
-        firstname = FirstName.text;
-        firstnameSpace = firstname.IndexOf(" ");
-        lastname = LastName.text;
-        lastnameSpace = lastname.IndexOf(" ");
-
-        if (requredFilled())
-        {
+        username = UserName.text;//store username
+        usernameSpace = username.IndexOf(" ");//get space index 
+        password = Password.text;//store password
+        Conpassword = ConPassword.text;//store confirm password 
+        email = Email.text;//store email
+        biography = Biography.text;//store bio
+        firstname = FirstName.text;//store first name 
+		firstnameSpace = firstname.IndexOf(" ");//get space index
+        lastname = LastName.text;//store last name
+		lastnameSpace = lastname.IndexOf(" ");//get space index
+        if (requredFilled())//method to check all required values filled
+        {   //to prevent spaces in names
             if (usernameSpace == -1 && firstnameSpace == -1 && lastnameSpace == -1)
-            {
+            {  //check password and its confirm are matching
                 if (password == Conpassword)
-                {
+                {///validate eamil
                     if (email.IndexOf("@") != -1)
-                    {   // Enable interface
+                    {   // method to Enable interface
                         enableInterface(false);
-
-
-#if UNITY_WEBGL
-                       {
-                        sfs = new SmartFox(UseWebSocket.WS);
-                        ServerPort = defaultWsPort;
-                       }
-#else
-                        {
-                            sfs = new SmartFox();
-                            ServerPort = defaultTcpPort;
-                        }
-#endif
-
-                        sfs.ThreadSafeMode = true;
-
-                        sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
-                        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-                        sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
-                        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
-                        sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-
-                        sfs.Connect(ServerIP, ServerPort);
-
-
-                        enableInterface(true);
+						ISFSObject objOut = new SFSObject();
+						int AdminIndex = username.IndexOf("n");//get "n" index
+						string admin = username.Substring(0, AdminIndex + 1);
+						//to check that all admin username start with "Admin"
+						if (admin.Equals("admin"))
+							username = "A" + username.Substring(1);
+						else if (!admin.Equals("Admin"))
+							username = "Admin" + username;
+						objOut.PutUtfString("username", username);//set username
+						objOut.PutUtfString("password", password);//set password
+						objOut.PutUtfString("email", email);//set email
+						objOut.PutUtfString("firstName", firstname);//set firstname
+						objOut.PutUtfString("lastName", lastname);//set lastname
+						objOut.PutUtfString("biography", biography);//set bio
+						objOut.PutUtfString("isAdmin", "Y");//set the account is admin
+						NetworkManager.Instance.AddNewAdmin(objOut);//send request to server
                     }
-                    else
+                    else//error message "invali email"
                         TextMessage.text = "Invalid email account";
                 }
-                else
+				else//error message "password and its confirm are not matching"
                     TextMessage.text = "The password and its confirm are not matching";
             }
-            else
+            else//error message "spaces in names"
                 TextMessage.text = "Username,firstname & lastname should not contains a space";
         }
-        else
+		else //error message"missing values"
             TextMessage.text = "Missing to fill required value";
-
     }//end create account
 
 
 
-    private void reset()
-    {
-        // Remove SFS2X listeners
-        sfs.RemoveAllEventListeners();
 
-        sfs = null;
-
-        // Enable interface
-        enableInterface(true);
-    }
-
-    private void OnConnectionLost(BaseEvent evt)
-    {
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-
-        string reason = (string)evt.Params["reason"];
-
-        if (reason != ClientDisconnectionReason.MANUAL)
-        {
-            // Show error message
-            Debug.Log("Connection was lost; reason is: " + reason);
-        }
-    }
-
-    private void OnExtensionResponse(BaseEvent evt)
-    {
-
-        string cmd = (string)evt.Params["cmd"];
-        ISFSObject objIn = (SFSObject)evt.Params["params"];
-        string message;
-        if (cmd == CMD_Signup)
-        {
-            if (objIn.ContainsKey("success"))
-
-            {
-                message = "Signup Successful";
-                Debug.Log(message);
-                TextMessage.text = message;
-
-            }
-            else
-            {
-                message = objIn.GetUtfString("errorMessage");
-                message = "Adding Error: " + message;
-                TextMessage.text = message;
-                Debug.Log(message);
-                reset();
-                SuccesResult.gameObject.SetActive(false);
-                createAccount.gameObject.SetActive(true);
-
-                EditorUtility.DisplayDialog("Waring Message", message, "ok");
-
-            }
-        }
-
-
-    }
-
-    private void OnLoginError(BaseEvent evt)
-    {
-        // Disconnect
-        sfs.Disconnect();
-
-        // Remove SFS2X listeners and re-enable interface
-        reset();
-
-        // Show error message
-        Debug.Log("Login failed: " + (string)evt.Params["errorMessage"]);
-
-    }
-
-    private void OnConnection(BaseEvent evt)
-    {
-        if ((bool)evt.Params["success"])
-        {
-            Debug.Log("Successfully Connected!");
-            sfs.Send(new LoginRequest("", "", ZoneName));
-        }
-        else
-        {
-            Debug.Log("Connection Failed!");
-            // Remove SFS2X listeners and re-enable interface
-            reset();
-
-            // Show error message
-            TextMessage.text = "Connection failed; is the server running at all?";
-        }
-    }
-
-    private void OnLogin(BaseEvent evt)
-    {
-        Debug.Log("Logged In: " + evt.Params["user"]);
-
-        ISFSObject objOut = new SFSObject();
-        int AdminIndex = username.IndexOf("n");
-        string admin = username.Substring(0, AdminIndex + 1);
-
-        if (admin.Equals("admin"))
-            username = "A" + username.Substring(1);
-        else if (!admin.Equals("Admin"))
-            username = "Admin" + username;
-
-        objOut.PutUtfString("username", username);
-        objOut.PutUtfString("password", password);
-        objOut.PutUtfString("email", email);
-        objOut.PutUtfString("firstName", firstname);
-        objOut.PutUtfString("lastName", lastname);
-        objOut.PutUtfString("biography", biography);
-        objOut.PutUtfString("isAdmin", "Y");
-
-        sfs.Send(new ExtensionRequest(CMD_Signup, objOut));
-
-        createAccount.gameObject.SetActive(false);
-        SuccesResult.gameObject.SetActive(true);
-
+	public void AddNewAdminResult(ISFSObject objIn)
+    {   //createAccount.gameObject.SetActive(false);
+		//SuccesResult.gameObject.SetActive(true);
+		enableInterface(true);
+		string result = objIn.GetUtfString("Result");
+		if (result == "Successful" ) {//if account updated successfully
+			Debug.Log ("Successful");
+			TextMessage.text ="The admin account has been created successfully";
+		} else {//if account not updated successfully
+			Debug.Log ("error");
+			TextMessage.text ="Sorry, the admin account has not been created";
+		}
     }
 
     private void enableInterface(bool enable)
