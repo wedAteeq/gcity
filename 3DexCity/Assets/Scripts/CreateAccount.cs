@@ -5,8 +5,7 @@ using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
 using UnityEngine.UI;
 using Sfs2X.Util;
-using UnityEditor;
-
+ 
 public class CreateAccount : MonoBehaviour
 {
     //----------------------------------------------------------
@@ -40,7 +39,7 @@ public class CreateAccount : MonoBehaviour
     public InputField UserName;
     public InputField Password;
     public InputField ConPassword;
-    public Text TextMessage;
+	public Text TextMessage,TextMessage2;
     public InputField Email;
     public InputField FirstName;
     public InputField LastName;
@@ -229,8 +228,7 @@ public class CreateAccount : MonoBehaviour
                 Error = 1;
                 message = objIn.GetUtfString("errorMessage");
                 message = "Signup Error: " + message;
-                //EditorUtility.DisplayDialog("Waring Message", message, "ok");
-                Debug.Log(message);
+                 Debug.Log(message);
                 TextMessage.text = message;
                 reset();
             }
@@ -272,8 +270,8 @@ public class CreateAccount : MonoBehaviour
             }
             else
             {
-                EditorUtility.DisplayDialog("Waring Message", "Sorry, there is not any empty room.", "ok");
-                updateAccount = 1;
+				TextMessage2.text = "The account has been created successfully, But your room has not been created; since there is not any empty room.";
+                 updateAccount = 1;
                 ISFSObject objOut = new SFSObject();
                 Act_Room = "N";
                 password = PasswordUtil.MD5Password(password);//to incrypt the password
@@ -299,13 +297,11 @@ public class CreateAccount : MonoBehaviour
             if (result == "Successful")
             {
                 Debug.Log("Successful");
-                EditorUtility.DisplayDialog("Waring Message", "Your room Id is " + Room_ID, "ok");
-            }
+				TextMessage2.text = "The account has been created successfully. Your room Id is " + Room_ID;
+              }
             else
                 Debug.Log("error");
-
-
-        }
+          }
         else if (Error == 0 && updateAccount == 1)
         {
             string result = objIn.GetUtfString("UpdateResult");

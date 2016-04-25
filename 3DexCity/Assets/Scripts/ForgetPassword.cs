@@ -5,8 +5,7 @@ using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
 using UnityEngine.UI;
 using Sfs2X.Util;
-using UnityEditor;
-
+ 
 public class ForgetPassword : MonoBehaviour
 {
     //----------------------------------------------------------
@@ -127,16 +126,14 @@ public class ForgetPassword : MonoBehaviour
                 message = objIn.GetUtfString("errorMessage");
                 Debug.Log(message);
                 TextMessage.text = message;
-                ///EditorUtility.DisplayDialog("Waring Message", message, "ok");
             }
             else
             {
                 message = "The password was sent to your email box";
                 Debug.Log(message);
                 TextMessage.text = message;
-                //EditorUtility.DisplayDialog("Waring Message", "         " + message, "ok");
-                forgetPassword.gameObject.SetActive(false);
-                login.gameObject.SetActive(true);
+                //forgetPassword.gameObject.SetActive(false);
+               // login.gameObject.SetActive(true);
             }
         }
 

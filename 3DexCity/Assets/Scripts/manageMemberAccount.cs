@@ -7,7 +7,6 @@ using UnityEngine.UI;
 using Sfs2X.Util;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using UnityEditor;
 
 public class manageMemberAccount : MonoBehaviour
 {
@@ -159,16 +158,14 @@ public class manageMemberAccount : MonoBehaviour
 		{
 			Debug.Log("Successful");
 			TextMessage.text = "Your account deleted successfully";
-			//	EditorUtility.DisplayDialog("Waring Message", "         Your account deleted successfully", "ok");
-			Home.gameObject.SetActive(true);//to display home page 
+ 			Home.gameObject.SetActive(true);//to display home page 
 			Delete.gameObject.SetActive(false);//to close curent delete form
 		}
 		else
 		{
 			Debug.Log("error");
 			TextMessage.text = "Your account has not been deleted";
-			//EditorUtility.DisplayDialog("Waring Message", "         Your account has not been deleted", "ok");
-
+ 
 		}
 	}
 

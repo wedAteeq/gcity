@@ -5,8 +5,7 @@ using Sfs2X.Util;
 using Sfs2X.Core;
 using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
-using UnityEditor;
-
+ 
 public class ViewMemberAccount : MonoBehaviour
 {
  
@@ -16,9 +15,9 @@ public class ViewMemberAccount : MonoBehaviour
     // UI elements
     //----------------------------------------------------------
     public InputField UserName;
-    public Text TextMessage;
+	public Text TextMessage,TextMessage2;
     public Transform AdminView;
-    public Transform viewPage, view, Delete;
+	public Transform viewPage, view, Delete,ConfirmDelete;
 
     public Text View_username;
     public Text Email;
@@ -128,7 +127,7 @@ public class ViewMemberAccount : MonoBehaviour
 	//to delete the account send to the server
 	ISFSObject objOut = new SFSObject();
 	objOut.PutUtfString("username", username);
-		NetworkManager.Instance.DeleteAccount(objOut,"AdminRequest");
+	NetworkManager.Instance.DeleteAccount(objOut,"AdminRequest");
 
   } //end delte account
 
@@ -138,9 +137,9 @@ public class ViewMemberAccount : MonoBehaviour
 		if (result == "Successful."+username)
 		{//if request was successfully
 			Debug.Log("Successful");
-			//EditorUtility.DisplayDialog("Waring Message", "         The account has been deleted successfully: " + username, "ok");
-			TextMessage.text ="The account has been deleted successfully: " + username;//display request result 
-			AdminView.gameObject.SetActive(true);//display admin view
+			//display request result 
+ 			TextMessage2.text ="The account has been deleted successfully: " + username;
+			ConfirmDelete.gameObject.SetActive(true);//display admin view
 			viewPage.gameObject.SetActive(false);//close view request page 
 			Delete.gameObject.SetActive(false);//close confirm delete page
 		}
@@ -148,8 +147,7 @@ public class ViewMemberAccount : MonoBehaviour
 		{
 			Debug.Log("error");
 			TextMessage.text = "the account has not been deleted";//display request result 
-			//EditorUtility.DisplayDialog("Waring Message", "         The account has not been deleted" + username, "ok");
-		}
+ 		}
 	}
 
     

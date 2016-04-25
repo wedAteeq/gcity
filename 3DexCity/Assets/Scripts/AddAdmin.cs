@@ -100,6 +100,7 @@ public class AddAdmin : MonoBehaviour
 							username = "A" + username.Substring(1);
 						else if (!admin.Equals("Admin"))
 							username = "Admin" + username;
+						password = PasswordUtil.MD5Password(password);//to incrypt the password
 						objOut.PutUtfString("username", username);//set username
 						objOut.PutUtfString("password", password);//set password
 						objOut.PutUtfString("email", email);//set email
